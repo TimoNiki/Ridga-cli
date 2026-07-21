@@ -6,7 +6,7 @@ if [ -z "$2" ] || [ "$1" != "install" ]; then
 fi
 
 APP_NAME="$2"
-JSON_URL="https://githubusercontent.com"
+JSON_URL="https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/apps.json"
 
 echo "⏳ Загрузка списков программ с GitHub..."
 JSON_DATA=$(curl -fsSL "$JSON_URL")
