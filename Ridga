@@ -6,7 +6,7 @@ if [ -z "$2" ] || [ "$1" != "install" ]; then
 fi
 
 APP_NAME="$2"
-JSON_URL="https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/apps.json"
+JSON_URL="https://githubusercontent.com"
 
 echo "⏳ Загрузка списков программ с GitHub..."
 JSON_DATA=$(curl -fsSL "$JSON_URL")
@@ -18,7 +18,6 @@ fi
 
 echo "🔍 Поиск программы '$APP_NAME' в базах данных..."
 
-# Поиск в секции brew_apps чисто средствами Bash
 BREW_CASK=$(echo "$JSON_DATA" | sed -n '/"brew_apps"/,/"direct_apps"/p' | grep -i "\"$APP_NAME\":" | head -n 1 | cut -d'"' -f4)
 
 if [ -n "$BREW_CASK" ]; then
@@ -27,17 +26,24 @@ if [ -n "$BREW_CASK" ]; then
     exit 0
 fi
 
-# Поиск в секции direct_apps чисто средствами Bash
 DIRECT_URL=$(echo "$JSON_DATA" | sed -n '/"direct_apps"/,$p' | grep -i "\"$APP_NAME\":" | head -n 1 | cut -d'"' -f4)
 
 if [ -n "$DIRECT_URL" ]; then
     echo "🌐 Найдено во втором списке (прямая ссылка URL)."
-    echo "⏳ Скачивание файла: $DIRECT_URL"
     
     EXT="${DIRECT_URL##*.}"
     if [[ "$EXT" == *"?"* ]] || [ -z "$EXT" ]; then EXT="dmg"; fi
     
+    if [ "$EXT" = "zip" ]; then
+        DOWNLOAD_PATH="$HOME/Downloads/${APP_NAME}.zip"
+        echo "⏳ Скачивание ZIP-архива напрямую в Загрузки: $DOWNLOAD_PATH"
+        curl -L -fsSL "$DIRECT_URL" -o "$DOWNLOAD_PATH"
+        echo "🎉 Файл успешно скачан в папку Загрузки!"
+        exit 0
+    fi
+    
     TMP_FILE="/tmp/ridga_installer.$EXT"
+    echo "⏳ Скачивание файла: $DIRECT_URL"
     curl -L -fsSL "$DIRECT_URL" -o "$TMP_FILE"
     
     if [ "$EXT" = "pkg" ]; then
