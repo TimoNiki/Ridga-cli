@@ -16,25 +16,10 @@ if [ -z "$JSON_DATA" ]; then
     exit 1
 fi
 
-get_json_value() {
-    local list_type=$1
-    local key=$2
-    echo "$JSON_DATA" | osascript -l JavaScript -e "
-        function run(argv) {
-            try {
-                var app = Application.currentApplication();
-                app.includeStandardAdditions = true;
-                var input = app.read('/dev/stdin');
-                var json = JSON.parse(input);
-                return json['$list_type']['$key'] || '';
-            } catch(e) { return ''; }
-        }
-    " 2>/dev/null
-}
-
 echo "🔍 Поиск программы '$APP_NAME' в базах данных..."
 
-BREW_CASK=$(get_json_value "brew_apps" "$APP_NAME")
+# Поиск в секции brew_apps чисто средствами Bash
+BREW_CASK=$(echo "$JSON_DATA" | sed -n '/"brew_apps"/,/"direct_apps"/p' | grep -i "\"$APP_NAME\":" | head -n 1 | cut -d'"' -f4)
 
 if [ -n "$BREW_CASK" ]; then
     echo "📦 Найдено в списке Homebrew. Установка через cask: $BREW_CASK..."
@@ -42,7 +27,8 @@ if [ -n "$BREW_CASK" ]; then
     exit 0
 fi
 
-DIRECT_URL=$(get_json_value "direct_apps" "$APP_NAME")
+# Поиск в секции direct_apps чисто средствами Bash
+DIRECT_URL=$(echo "$JSON_DATA" | sed -n '/"direct_apps"/,$p' | grep -i "\"$APP_NAME\":" | head -n 1 | cut -d'"' -f4)
 
 if [ -n "$DIRECT_URL" ]; then
     echo "🌐 Найдено во втором списке (прямая ссылка URL)."
