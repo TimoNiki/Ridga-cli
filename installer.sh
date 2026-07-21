@@ -8,7 +8,7 @@ else
     echo "✅ Homebrew уже установлен."
 fi
 
-SRC_URL="https://githubusercontent.com"
+SRC_URL="https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/Ridga"
 DEST_PATH="/usr/local/bin/Ridga"
 
 echo "⏳ Установка компонентов..."
