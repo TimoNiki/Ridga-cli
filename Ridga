@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# ССЫЛКА НА ВАШ JSON-ФАЙЛ (Замените на вашу RAW-ссылку из Шага 1)
+JSON_URL="https://githubusercontent.com"
+
+if [ "$1" = "install" ] && [ -n "$2" ]; then
+    APP_KEY="$2"
+    
+    echo "⏳ Проверка списка программ..."
+    
+    # 1. Скачиваем актуальный JSON во временную переменную
+    JSON_DATA=$(curl -fsSL "$JSON_URL")
+    
+    if [ -z "$JSON_DATA" ]; then
+        echo "❌ Ошибка: Не удалось загрузить список программ из интернета."
+        exit 1
+    fi
+    
+    # 2. Используем встроенный в macOS JavaScript для безопасного чтения JSON
+    BREW_NAME=$(osascript -l JavaScript -e "
+        try {
+            var obj = JSON.parse(\`$JSON_DATA\`);
+            var res = obj['$APP_KEY'];
+            res ? res : 'NOT_FOUND';
+        } catch(e) {
+            'PARSE_ERROR';
+        }
+    ")
+    
+    # 3. Обработка результатов поиска
+    if [ "$BREW_NAME" = "NOT_FOUND" ]; then
+        echo "❌ Ошибка: Программа '$APP_KEY' не найдена в списке Ridga."
+        exit 1
+    elif [ "$BREW_NAME" = "PARSE_ERROR" ]; then
+        echo "❌ Ошибка: Файл apps.json поврежден или имеет неверный формат."
+        exit 1
+    fi
+    
+    # 4. Запуск установки через Homebrew
+    echo "📦 Ridga устанавливает $APP_KEY (пакет: $BREW_NAME)..."
+    brew install --cask "$BREW_NAME"
+    
+else
+    echo "ℹ️ Использование: Ridga install [имя_программы]"
+fi
