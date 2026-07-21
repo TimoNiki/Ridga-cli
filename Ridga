@@ -1,5 +1,104 @@
 #!/bin/bash
 
+if [ -z "$2" ] || [ "$1" != "install" ]; then
+    echo "❌ Использование: Ridga install имя_программы"
+    exit 1
+fi
+
+APP_NAME="$2"
+
+JSON_URL="https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/apps.json"
+
+echo "⏳ Загрузка списков программ с GitHub..."
+JSON_DATA=$(curl -fsSL "$JSON_URL")
+
+if [ -z "$JSON_DATA" ]; then
+    echo "❌ Ошибка: Не удалось загрузить apps.json с GitHub. Проверьте интернет или ссылку."
+    exit 1
+fi
+
+
+get_json_value() {
+    local list_type=$1
+    local key=$2
+    echo "$JSON_DATA" | osascript -l JavaScript -e "
+        function run(argv) {
+            try {
+                var json = JSON.parse(ObjC.unwrap($.NSProcessInfo.processInfo.environment.objectForKey('JSON_DATA')));
+                return json['$list_type']['$key'] || '';
+            } catch(e) { return ''; }
+        }
+    " 2>/dev/null
+}
+
+export JSON_DATA
+
+echo "🔍 Поиск программы '$APP_NAME' в базах данных..."
+
+# -------------------------------------------------------------
+# ЛОГИКА 1: ПРОВЕРКА В ПЕРВОМ СПИСКЕ (Homebrew)
+# -------------------------------------------------------------
+BREW_CASK=$(get_json_value "brew_apps" "$APP_NAME")
+
+if [ -n "$BREW_CASK" ]; then
+    echo "📦 Найдено в списке Homebrew. Установка через cask: $BREW_CASK..."
+    brew install --cask "$BREW_CASK"
+    exit 0
+fi
+
+# -------------------------------------------------------------
+# ЛОГИКА 2: ПРОВЕРКА ВО ВТОРОМ СПИСКЕ (Прямые URL-ссылки)
+# -------------------------------------------------------------
+DIRECT_URL=$(get_json_value "direct_apps" "$APP_NAME")
+
+if [ -n "$DIRECT_URL" ]; then
+    echo "🌐 Найдено во втором списке (прямая ссылка URL)."
+    echo "⏳ Скачивание файла: $DIRECT_URL"
+    
+    
+    EXT="${DIRECT_URL##*.}"
+    if [[ "$EXT" == *"?"* ]] || [ -z "$EXT" ]; then EXT="dmg"; fi
+    
+    TMP_FILE="/tmp/ridga_installer.$EXT"
+    
+    curl -L -fsSL "$DIRECT_URL" -o "$TMP_FILE"
+    
+    
+    if [ "$EXT" = "pkg" ]; then
+        echo "⚙️ Запуск установки PKG пакета..."
+        sudo installer -pkg "$TMP_FILE" -target /
+    else
+        echo "💿 Монтирование DMG образа..."
+        # Монтируем диск скрыто и вытаскиваем его имя в системе
+        MOUNT_DIR=$(hdiutil attach -nobrowse "$TMP_FILE" | grep -o '/Volumes/.*' | head -n 1)
+        
+        if [ -n "$MOUNT_DIR" ]; then
+            echo "📂 Копирование .app в папку /Applications..."
+            # Копируем любую программу с расширением .app из смонтированного диска
+            sudo cp -R "$MOUNT_DIR"/*.app /Applications/ 2>/dev/null
+            
+            echo "⏏️ Извлечение DMG диска..."
+            hdiutil detach "$MOUNT_DIR"
+        else
+            echo "❌ Ошибка: Не удалось примонтировать загруженный DMG файл."
+            rm -f "$TMP_FILE"
+            exit 1
+        fi
+    fi
+    
+    # Чистим за собой временный скачанный файл
+    rm -f "$TMP_FILE"
+    echo "🎉 Программа $APP_NAME успешно установлена!"
+    exit 0
+fi
+
+# Если программы нет ни в одном из списков гитхаба
+echo "❌ Ошибка: Программа '$APP_NAME' не найдена в файле apps.json на GitHub."
+exit 1
+
+
+#!/bin/bash
+
 # ССЫЛКА НА ВАШ JSON-ФАЙЛ (Замените на вашу RAW-ссылку из Шага 1)
 JSON_URL="https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/apps.json"
 
