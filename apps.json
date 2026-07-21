@@ -3,4 +3,6 @@
   "vscode": "visual-studio-code",
   "telegram": "telegram",
   "spotify": "spotify"
+  "cmake": "cmake",
+  "mingw-w64": "mingw-w64",
 }
