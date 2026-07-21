@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ССЫЛКА НА ВАШ JSON-ФАЙЛ (Замените на вашу RAW-ссылку из Шага 1)
-JSON_URL="https://githubusercontent.com"
+JSON_URL="https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/apps.json"
 
 if [ "$1" = "install" ] && [ -n "$2" ]; then
     APP_KEY="$2"
