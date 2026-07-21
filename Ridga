@@ -22,14 +22,15 @@ get_json_value() {
     echo "$JSON_DATA" | osascript -l JavaScript -e "
         function run(argv) {
             try {
-                var json = JSON.parse(ObjC.unwrap($.NSProcessInfo.processInfo.environment.objectForKey('JSON_DATA')));
+                var app = Application.currentApplication();
+                app.includeStandardAdditions = true;
+                var input = app.read('/dev/stdin');
+                var json = JSON.parse(input);
                 return json['$list_type']['$key'] || '';
             } catch(e) { return ''; }
         }
     " 2>/dev/null
 }
-
-export JSON_DATA
 
 echo "🔍 Поиск программы '$APP_NAME' в базах данных..."
 
