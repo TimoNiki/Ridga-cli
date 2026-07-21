@@ -6,8 +6,7 @@ if [ -z "$2" ] || [ "$1" != "install" ]; then
 fi
 
 APP_NAME="$2"
-
-JSON_URL="https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/apps.json"
+JSON_URL="https://githubusercontent.com"
 
 echo "⏳ Загрузка списков программ с GitHub..."
 JSON_DATA=$(curl -fsSL "$JSON_URL")
@@ -16,7 +15,6 @@ if [ -z "$JSON_DATA" ]; then
     echo "❌ Ошибка: Не удалось загрузить apps.json с GitHub. Проверьте интернет или ссылку."
     exit 1
 fi
-
 
 get_json_value() {
     local list_type=$1
@@ -35,9 +33,6 @@ export JSON_DATA
 
 echo "🔍 Поиск программы '$APP_NAME' в базах данных..."
 
-# -------------------------------------------------------------
-# ЛОГИКА 1: ПРОВЕРКА В ПЕРВОМ СПИСКЕ (Homebrew)
-# -------------------------------------------------------------
 BREW_CASK=$(get_json_value "brew_apps" "$APP_NAME")
 
 if [ -n "$BREW_CASK" ]; then
@@ -46,37 +41,41 @@ if [ -n "$BREW_CASK" ]; then
     exit 0
 fi
 
-# -------------------------------------------------------------
-# ЛОГИКА 2: ПРОВЕРКА ВО ВТОРОМ СПИСКЕ (Прямые URL-ссылки)
-# -------------------------------------------------------------
 DIRECT_URL=$(get_json_value "direct_apps" "$APP_NAME")
 
 if [ -n "$DIRECT_URL" ]; then
     echo "🌐 Найдено во втором списке (прямая ссылка URL)."
     echo "⏳ Скачивание файла: $DIRECT_URL"
     
-    
     EXT="${DIRECT_URL##*.}"
     if [[ "$EXT" == *"?"* ]] || [ -z "$EXT" ]; then EXT="dmg"; fi
     
     TMP_FILE="/tmp/ridga_installer.$EXT"
-    
     curl -L -fsSL "$DIRECT_URL" -o "$TMP_FILE"
-    
     
     if [ "$EXT" = "pkg" ]; then
         echo "⚙️ Запуск установки PKG пакета..."
         sudo installer -pkg "$TMP_FILE" -target /
+        rm -f "$TMP_FILE"
+        
+    elif [ "$EXT" = "jar" ]; then
+        echo "☕ Обнаружен Java-файл (.jar)..."
+        
+        if ! command -v java &> /dev/null; then
+            echo "⚠️ Внимание: Java не найдена в системе! .jar файл будет сохранен, но для его запуска вам нужно будет установить Java."
+        fi
+        
+        sudo mv "$TMP_FILE" "/Applications/${APP_NAME}.jar"
+        sudo chmod +x "/Applications/${APP_NAME}.jar"
+        echo "💡 Совет: Теперь вы можете запустить программу через Терминал: java -jar /Applications/${APP_NAME}.jar"
+        
     else
         echo "💿 Монтирование DMG образа..."
-        # Монтируем диск скрыто и вытаскиваем его имя в системе
         MOUNT_DIR=$(hdiutil attach -nobrowse "$TMP_FILE" | grep -o '/Volumes/.*' | head -n 1)
         
         if [ -n "$MOUNT_DIR" ]; then
             echo "📂 Копирование .app в папку /Applications..."
-            # Копируем любую программу с расширением .app из смонтированного диска
             sudo cp -R "$MOUNT_DIR"/*.app /Applications/ 2>/dev/null
-            
             echo "⏏️ Извлечение DMG диска..."
             hdiutil detach "$MOUNT_DIR"
         else
@@ -84,61 +83,12 @@ if [ -n "$DIRECT_URL" ]; then
             rm -f "$TMP_FILE"
             exit 1
         fi
+        rm -f "$TMP_FILE"
     fi
     
-    # Чистим за собой временный скачанный файл
-    rm -f "$TMP_FILE"
     echo "🎉 Программа $APP_NAME успешно установлена!"
     exit 0
 fi
 
-# Если программы нет ни в одном из списков гитхаба
 echo "❌ Ошибка: Программа '$APP_NAME' не найдена в файле apps.json на GitHub."
 exit 1
-
-
-#!/bin/bash
-
-# ССЫЛКА НА ВАШ JSON-ФАЙЛ (Замените на вашу RAW-ссылку из Шага 1)
-JSON_URL="https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/apps.json"
-
-if [ "$1" = "install" ] && [ -n "$2" ]; then
-    APP_KEY="$2"
-    
-    echo "⏳ Проверка списка программ..."
-    
-    # 1. Скачиваем актуальный JSON во временную переменную
-    JSON_DATA=$(curl -fsSL "$JSON_URL")
-    
-    if [ -z "$JSON_DATA" ]; then
-        echo "❌ Ошибка: Не удалось загрузить список программ из интернета."
-        exit 1
-    fi
-    
-    # 2. Используем встроенный в macOS JavaScript для безопасного чтения JSON
-    BREW_NAME=$(osascript -l JavaScript -e "
-        try {
-            var obj = JSON.parse(\`$JSON_DATA\`);
-            var res = obj['$APP_KEY'];
-            res ? res : 'NOT_FOUND';
-        } catch(e) {
-            'PARSE_ERROR';
-        }
-    ")
-    
-    # 3. Обработка результатов поиска
-    if [ "$BREW_NAME" = "NOT_FOUND" ]; then
-        echo "❌ Ошибка: Программа '$APP_KEY' не найдена в списке Ridga."
-        exit 1
-    elif [ "$BREW_NAME" = "PARSE_ERROR" ]; then
-        echo "❌ Ошибка: Файл apps.json поврежден или имеет неверный формат."
-        exit 1
-    fi
-    
-    # 4. Запуск установки через Homebrew
-    echo "📦 Ridga устанавливает $APP_KEY (пакет: $BREW_NAME)..."
-    brew install --cask "$BREW_NAME"
-    
-else
-    echo "ℹ️ Использование: Ridga install [имя_программы]"
-fi
