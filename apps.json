@@ -1,8 +1,12 @@
 {
-  "googlechrome": "google-chrome",
-  "vscode": "visual-studio-code",
-  "telegram": "telegram",
-  "spotify": "spotify"
-  "cmake": "cmake",
-  "mingw-w64": "mingw-w64",
+  "brew_apps": {
+    "telegram": "telegram",
+    "vlc": "vlc",
+    "cmake": "cmake",
+    "chrome": "google-chrome"
+  },
+  "direct_apps": {
+    "compilez": "noturl.url",
+    "zoom": "https://zoom.us"
+  }
 }
