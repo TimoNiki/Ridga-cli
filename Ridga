@@ -11,13 +11,19 @@ fi
 
 if [ -z "$2" ] || [ "$1" != "install" ]; then
     echo "❌ Использование:"
-    echo "   ridga install имя_программы"
+    echo "   ridga install имя_программы [-1vers | --1vers_]"
     echo "   ridga verify ПУТЬ_К_ПРОГРАММЕ.app"
     exit 1
 fi
 
 APP_NAME="$2"
-JSON_URL="https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/apps.json"
+JSON_URL="https://githubusercontent.com"
+
+USE_V1_LIST=false
+if [ "$3" = "-1vers" ] || [ "$3" = "--1vers_" ]; then
+    echo "🔄 Запрошена версия 1. Поиск в альтернативной базе данных..."
+    USE_V1_LIST=true
+fi
 
 echo "⏳ Загрузка списков программ с GitHub..."
 JSON_DATA=$(curl -fsSL "$JSON_URL")
@@ -29,18 +35,22 @@ fi
 
 echo "🔍 Поиск программы '$APP_NAME' в базах данных..."
 
-BREW_CASK=$(echo "$JSON_DATA" | sed -n '/"brew_apps"/,/"direct_apps"/p' | grep -i "\"$APP_NAME\":" | head -n 1 | cut -d'"' -f4)
+if [ "$USE_V1_LIST" = true ]; then
+    DIRECT_URL=$(echo "$JSON_DATA" | sed -n '/"direct_apps_v1"/,$p' | grep -i "\"$APP_NAME\":" | head -n 1 | cut -d'"' -f4)
+else
+    BREW_CASK=$(echo "$JSON_DATA" | sed -n '/"brew_apps"/,/"direct_apps"/p' | grep -i "\"$APP_NAME\":" | head -n 1 | cut -d'"' -f4)
 
-if [ -n "$BREW_CASK" ]; then
-    echo "📦 Найдено в списке Homebrew. Установка через cask: $BREW_CASK..."
-    brew install --cask "$BREW_CASK"
-    exit 0
+    if [ -n "$BREW_CASK" ]; then
+        echo "📦 Найдено в списке Homebrew. Установка через cask: $BREW_CASK..."
+        brew install --cask "$BREW_CASK"
+        exit 0
+    fi
+
+    DIRECT_URL=$(echo "$JSON_DATA" | sed -n '/"direct_apps"/,/"direct_apps_v1"/p' | grep -i "\"$APP_NAME\":" | head -n 1 | cut -d'"' -f4)
 fi
 
-DIRECT_URL=$(echo "$JSON_DATA" | sed -n '/"direct_apps"/,$p' | grep -i "\"$APP_NAME\":" | head -n 1 | cut -d'"' -f4)
-
 if [ -n "$DIRECT_URL" ]; then
-    echo "🌐 Найдено во втором списке (прямая ссылка URL)."
+    echo "🌐 Найдено по прямой ссылке URL."
     
     EXT="${DIRECT_URL##*.}"
     if [[ "$EXT" == *"?"* ]] || [ -z "$EXT" ]; then EXT="dmg"; fi
@@ -94,5 +104,5 @@ if [ -n "$DIRECT_URL" ]; then
     exit 0
 fi
 
-echo "❌ Ошибка: Программа '$APP_NAME' не найдена в файле apps.json на GitHub."
+echo "❌ Ошибка: Программа '$APP_NAME' не найдена в соответствующем списке apps.json на GitHub."
 exit 1
