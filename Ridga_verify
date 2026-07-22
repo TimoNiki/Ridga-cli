@@ -1,0 +1,28 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+    echo "❌ Ошибка: Укажите путь к приложению. Пример: ridga verify /Applications/App.app"
+    exit 1
+fi
+
+APP_PATH="$1"
+
+if [ ! -d "$APP_PATH" ]; then
+    echo "❌ Ошибка: Путь '$APP_PATH' не найден или это не папка .app"
+    exit 1
+fi
+
+echo "⏳ Лечение и верификация приложения: $APP_PATH"
+
+echo "🔓 Снятие флагов карантина macOS (xattr)..."
+sudo xattr -rd com.apple.quarantine "$APP_PATH" 2>/dev/null
+
+echo "🔑 Выдача прав на исполнение (chmod)..."
+sudo chmod -R 755 "$APP_PATH" 2>/dev/null
+
+if command -v codesign &> /dev/null; then
+    echo "✍️ Принудительное подписание локальной подписью (codesign)..."
+    sudo codesign --force --deep --sign - "$APP_PATH" 2>/dev/null
+fi
+
+echo "🎉 Успешно! Программа '$APP_NAME' проверена и готова к запуску."
