@@ -10,7 +10,7 @@ else
 fi
 
 SRC_URL="https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/Ridga"
-VERIFY_SRC_URL="https://githubusercontent.com"
+VERIFY_SRC_URL="https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/Ridga_verify"
 
 DEST_PATH="/usr/local/bin/Ridga"
 VERIFY_DEST_PATH="/usr/local/bin/ridga_verify"
