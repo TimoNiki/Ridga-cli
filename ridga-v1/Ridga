@@ -1,1 +1,98 @@
-// test
+#!/bin/bash
+
+if [ "$1" = "verify" ]; then
+    if [ -z "$2" ]; then
+        echo "❌ Использование: ridga verify ПУТЬ_К_ПРОГРАММЕ.app"
+        exit 1
+    fi
+    /usr/local/bin/ridga_verify "$2"
+    exit 0
+fi
+
+if [ -z "$2" ] || [ "$1" != "install" ]; then
+    echo "❌ Использование:"
+    echo "   ridga install имя_программы"
+    echo "   ridga verify ПУТЬ_К_ПРОГРАММЕ.app"
+    exit 1
+fi
+
+APP_NAME="$2"
+JSON_URL="https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/apps.json"
+
+echo "⏳ Загрузка списков программ с GitHub..."
+JSON_DATA=$(curl -fsSL "$JSON_URL")
+
+if [ -z "$JSON_DATA" ]; then
+    echo "❌ Ошибка: Не удалось загрузить apps.json с GitHub. Проверьте интернет или ссылку."
+    exit 1
+fi
+
+echo "🔍 Поиск программы '$APP_NAME' в базах данных..."
+
+BREW_CASK=$(echo "$JSON_DATA" | sed -n '/"brew_apps"/,/"direct_apps"/p' | grep -i "\"$APP_NAME\":" | head -n 1 | cut -d'"' -f4)
+
+if [ -n "$BREW_CASK" ]; then
+    echo "📦 Найдено в списке Homebrew. Установка через cask: $BREW_CASK..."
+    brew install --cask "$BREW_CASK"
+    exit 0
+fi
+
+DIRECT_URL=$(echo "$JSON_DATA" | sed -n '/"direct_apps"/,$p' | grep -i "\"$APP_NAME\":" | head -n 1 | cut -d'"' -f4)
+
+if [ -n "$DIRECT_URL" ]; then
+    echo "🌐 Найдено во втором списке (прямая ссылка URL)."
+    
+    EXT="${DIRECT_URL##*.}"
+    if [[ "$EXT" == *"?"* ]] || [ -z "$EXT" ]; then EXT="dmg"; fi
+    
+    if [ "$EXT" = "zip" ]; then
+        DOWNLOAD_PATH="$HOME/Downloads/${APP_NAME}.zip"
+        echo "⏳ Скачивание ZIP-архива напрямую в Загрузки: $DOWNLOAD_PATH"
+        curl -L -fsSL "$DIRECT_URL" -o "$DOWNLOAD_PATH"
+        echo "🎉 Файл успешно скачан в папку Загрузки!"
+        exit 0
+    fi
+    
+    TMP_FILE="/tmp/ridga_installer.$EXT"
+    echo "⏳ Скачивание файла: $DIRECT_URL"
+    curl -L -fsSL "$DIRECT_URL" -o "$TMP_FILE"
+    
+    if [ "$EXT" = "pkg" ]; then
+        echo "⚙️ Запуск установки PKG пакета..."
+        sudo installer -pkg "$TMP_FILE" -target /
+        rm -f "$TMP_FILE"
+        
+    elif [ "$EXT" = "jar" ]; then
+        echo "☕ Обнаружен Java-файл (.jar)..."
+        
+        if ! command -v java &> /dev/null; then
+            echo "⚠️ Внимание: Java не найдена в системе! .jar файл будет сохранен, но для его запуска вам нужно будет установить Java."
+        fi
+        
+        sudo mv "$TMP_FILE" "/Applications/${APP_NAME}.jar"
+        sudo chmod +x "/Applications/${APP_NAME}.jar"
+        echo "💡 Совет: Теперь вы можете запустить программу через Терминал: java -jar /Applications/${APP_NAME}.jar"
+        
+    else
+        echo "💿 Монтирование DMG образа..."
+        MOUNT_DIR=$(hdiutil attach -nobrowse "$TMP_FILE" | grep -o '/Volumes/.*' | head -n 1)
+        
+        if [ -n "$MOUNT_DIR" ]; then
+            echo "📂 Копирование .app в папку /Applications..."
+            sudo cp -R "$MOUNT_DIR"/*.app /Applications/ 2>/dev/null
+            echo "⏏️ Извлечение DMG диска..."
+            hdiutil detach "$MOUNT_DIR"
+        else
+            echo "❌ Ошибка: Не удалось примонтировать загруженный DMG файл."
+            rm -f "$TMP_FILE"
+            exit 1
+        fi
+        rm -f "$TMP_FILE"
+    fi
+    
+    echo "🎉 Программа $APP_NAME успешно установлена!"
+    exit 0
+fi
+
+echo "❌ Ошибка: Программа '$APP_NAME' не найдена в файле apps.json на GitHub."
+exit 1
