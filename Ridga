@@ -17,7 +17,7 @@ if [ -z "$2" ] || [ "$1" != "install" ]; then
 fi
 
 APP_NAME="$2"
-JSON_URL="https://githubusercontent.com"
+JSON_URL="https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/apps.json"
 
 USE_V1_LIST=false
 if [ "$3" = "-1vers" ] || [ "$3" = "--1vers_" ]; then
