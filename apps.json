@@ -7,7 +7,7 @@
   },
   "direct_apps": {
     "compilez": "noturl.url",
-    "HackMyOS": "https://github.com/TimoNiki/HackMyMacOS/releases/download/V2/HackMyMacOS.jar",
+    "HackMyMacOS": "https://github.com/TimoNiki/HackMyMacOS/releases/download/V2/HackMyMacOS.jar",
     "legacyLauncher": "https://dl-cdn-yc.legacylauncher.ru/legacy/dmg/LegacyLauncher.dmg",
     "RoombaCommTODEKURTVER": "https://github.com/TimoNiki/TimoNikiDownloadCenter/raw/refs/heads/main/roombacomm.jar",
     "zoom": "https://zoom.us"
