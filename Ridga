@@ -1,4 +1,14 @@
 #!/bin/bash
+# Ridga by TimoNiki (C) TimoNiki
+if [ "$1" = "--update" ]; then
+    sleep 1.5
+    echo "🔄 Starting ridga update..."
+    sleep 3
+    echo "downloading installer..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/installer.sh)"
+    echo "New Version of Ridga-cli installed!"
+    exit 0
+fi
 
 if [ "$1" = "verify" ]; then
     if [ -z "$2" ]; then
