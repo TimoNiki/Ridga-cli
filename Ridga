@@ -1,7 +1,6 @@
 #!/bin/bash
 # Ridga by TimoNiki (C) TimoNiki
 
-# 1. Проверка обновления
 if [ "$1" = "--update" ]; then
     sleep 1.5
     echo "🔄 Starting ridga update..."
@@ -12,18 +11,21 @@ if [ "$1" = "--update" ]; then
     exit 0
 fi
 
-# 2. Перезапуск
+if [ "$1" = "--version" ]; then
+    echo Ridga V1.0.2
+    echo (C) TimoNiki
+    exit 0
+fi
+
 if [ "$1" = "--restart" ]; then
         /usr/local/bin/ridga
         exit 0
 fi
 
-# 3. Приветствие
 if [ "$1" = "--set ridga by TimoNiki" ]; then
         echo "Hi!"
 fi
 
-# 4. Верификация
 if [ "$1" = "verify" ]; then
     if [ -z "$2" ]; then
         echo "ERROR."
@@ -33,7 +35,6 @@ if [ "$1" = "verify" ]; then
     exit 0
 fi
 
-# 5. Проверка базовых аргументов для установки
 if [ -z "$2" ] || [ "$1" != "install" ]; then
     echo "ERROR"
     echo "Ridga V1.0.2"
@@ -45,7 +46,6 @@ APP_NAME="$2"
 JSON_URL="https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/apps.json"
 USE_V1_LIST=false
 
-# Исправлен синтаксис (добавлена ';')
 if [ "$3" = "-1vers" ] || [ "$3" = "--1vers" ]; then
     echo "🔄 Ver1 flag founded. Searching in ver1 data-base"
     USE_V1_LIST=true
