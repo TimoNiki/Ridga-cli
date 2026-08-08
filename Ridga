@@ -13,7 +13,7 @@ fi
 
 if [ "$1" = "--version" ]; then
     echo Ridga V1.0.2
-    echo (C) TimoNiki
+    echo C TimoNiki
     exit 0
 fi
 
