@@ -9,11 +9,7 @@ if [ "$1" = "--update" ]; then
     echo "New Version of Ridga-cli installed!"
     exit 0
 fi
-if [ "$1" = "--restart" ]; then
-    if [ -z "$2" ]; then
-        /usr/local/bin/ridga
-        exit 0
-fi
+
 if [ "$1" = "--set ridga by TimoNiki" ]; then
     if [ -z "$2" ]; then
         echo Hi!
