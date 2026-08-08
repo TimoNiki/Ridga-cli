@@ -14,17 +14,13 @@ fi
 
 # 2. Перезапуск
 if [ "$1" = "--restart" ]; then
-    if [ -z "$2" ]; then
         /usr/local/bin/ridga
         exit 0
-    fi
 fi
 
 # 3. Приветствие
 if [ "$1" = "--set ridga by TimoNiki" ]; then
-    if [ -z "$2" ]; then
         echo "Hi!"
-    fi
 fi
 
 # 4. Верификация
