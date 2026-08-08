@@ -9,6 +9,15 @@ if [ "$1" = "--update" ]; then
     echo "New Version of Ridga-cli installed!"
     exit 0
 fi
+if [ "$1" = "--restart" ]; then
+    if [ -z "$2" ]; then
+        /usr/local/bin/ridga
+        exit 0
+fi
+if [ "$1" = "--set ridga by TimoNiki" ]; then
+    if [ -z "$2" ]; then
+        echo Hi!
+fi
 
 if [ "$1" = "verify" ]; then
     if [ -z "$2" ]; then
@@ -20,7 +29,7 @@ if [ "$1" = "verify" ]; then
 fi
 
 if [ -z "$2" ] || [ "$1" != "install" ]; then
-    echo "Ridga-ci V1.0.2 by TimoNiki"
+    echo "ERROR"
     echo "Ridga V1.0.2"
     echo "copyright (C) 2026 TimoNiki"
     exit 1
@@ -30,7 +39,7 @@ APP_NAME="$2"
 JSON_URL="https://raw.githubusercontent.com/TimoNiki/Ridga-cli/refs/heads/main/apps.json"
 
 USE_V1_LIST=false
-if [ "$3" = "-1vers" ] || [ "$3" = "--1vers_" ]; then
+if [ "$3" = "-1vers" ] || [ "$3" = "--1vers" ]; then
     echo "🔄 Ver1 flag founded. Searching in ver1 data-base"
     USE_V1_LIST=true
 fi
